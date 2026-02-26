@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_blog_flutter/features/auth/auth_provider.dart';
+import 'package:simple_blog_flutter/features/auth/presentation/home_screen.dart';
 import 'package:simple_blog_flutter/features/auth/presentation/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -51,7 +52,7 @@ class MyApp extends ConsumerWidget {
           if (user == null) {
             return const LoginScreen();
           }
-          return const Scaffold(body: Center(child: Text('Logged In')));
+          return const HomeScreen();
         },
         error: (e, _) => Scaffold(body: Center(child: Text(e.toString()))),
         loading: () =>
