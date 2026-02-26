@@ -22,8 +22,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authStateProvider).value;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Simple Blog'),

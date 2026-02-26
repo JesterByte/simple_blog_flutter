@@ -38,6 +38,39 @@ class BlogRepository {
     }
   }
 
+  Future<void> updateBlog({
+    required String blogId,
+    required String title,
+    required String content,
+    required List<File> newImages,
+  }) async {
+    await _client
+        .from('blogs')
+        .update({
+          'title': title,
+          'content': content,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', blogId);
+
+    if (newImages.isEmpty) return;
+
+    await _client.from('blog_images').delete().eq('blog_id', blogId);
+
+    for (final file in newImages) {
+      final path = 'blogs/$blogId/${_uuid.v4()}.jpg';
+
+      await _client.storage.from('blog-images').upload(path, file);
+
+      final publicUrl = _client.storage.from('blog-images').getPublicUrl(path);
+
+      await _client.from('blog_images').insert({
+        'blog_id': blogId,
+        'image_url': publicUrl,
+      });
+    }
+  }
+
   Future<List<Blog>> getBlogs() async {
     final response = await _client
         .from('blogs')
