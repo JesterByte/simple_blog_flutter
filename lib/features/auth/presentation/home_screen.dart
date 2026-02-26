@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_blog_flutter/features/auth/auth_provider.dart';
+import 'package:simple_blog_flutter/features/blog/presentation/blog_list_screen.dart';
 import 'package:simple_blog_flutter/features/profile/presentation/profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -41,12 +42,7 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Text(
-          'Welcome ${user?.email ?? ''}',
-          style: const TextStyle(fontSize: 18),
-        ),
-      ),
+      body: const BlogListScreen(),
     );
   }
 }
