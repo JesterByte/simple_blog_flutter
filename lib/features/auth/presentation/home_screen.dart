@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_blog_flutter/features/auth/auth_provider.dart';
+import 'package:simple_blog_flutter/features/profile/presentation/profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -10,6 +11,8 @@ class HomeScreen extends ConsumerWidget {
       final repo = ref.read(authRepositoryProvider);
       await repo.signOut();
     } catch (e) {
+      if (!context.mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -24,6 +27,14 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Simple Blog'),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => ProfileScreen()));
+            },
+            icon: const Icon(Icons.person),
+          ),
           IconButton(
             onPressed: () => _logout(context, ref),
             icon: const Icon(Icons.logout),
