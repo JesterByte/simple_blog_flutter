@@ -6,6 +6,9 @@ class Blog {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final List<String> images;
+  final String? authorAvatar;
+  final String? authorName;
+  final int commentCount;
 
   Blog({
     required this.id,
@@ -15,9 +18,19 @@ class Blog {
     required this.createdAt,
     this.updatedAt,
     this.images = const [],
+    this.authorAvatar,
+    this.authorName,
+    this.commentCount = 0,
   });
 
   factory Blog.fromMap(Map<String, dynamic> map) {
+    int parsedCommentCount = 0;
+    if (map['comments'] is Map) {
+      parsedCommentCount = map['comments']['count'] ?? 0;
+    } else if (map['comments'] is List) {
+      parsedCommentCount = (map['comments'] as List).length;
+    }
+
     return Blog(
       id: map['id'],
       authorId: map['author_id'],
@@ -32,18 +45,9 @@ class Blog {
               ?.map((e) => e['image_url'] as String)
               .toList() ??
           [],
+      authorAvatar: map['profiles']?['avatar_url'],
+      authorName: map['profiles']?['display_name'],
+      commentCount: parsedCommentCount,
     );
-  }
-
-  Map<String, dynamic> toInsertMap() {
-    return {'author_id': authorId, 'title': title, 'content': content};
-  }
-
-  Map<String, dynamic> toUpdateMap() {
-    return {
-      'title': title,
-      'content': content,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
   }
 }

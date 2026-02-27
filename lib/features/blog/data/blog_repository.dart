@@ -72,9 +72,19 @@ class BlogRepository {
   }
 
   Future<List<Blog>> getBlogs() async {
+    // final response = await _client
+    //     .from('blogs')
+    //     .select('*, blog_images(image_url)')
+    //     .order('created_at', ascending: false);
+
     final response = await _client
         .from('blogs')
-        .select('*, blog_images(image_url)')
+        .select('''
+          *,
+          blog_images(image_url),
+          profiles!blogs_author_id_fkey(avatar_url, display_name),
+          comments(count)
+        ''')
         .order('created_at', ascending: false);
 
     return (response as List).map((map) => Blog.fromMap(map)).toList();
