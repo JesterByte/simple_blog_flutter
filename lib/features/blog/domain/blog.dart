@@ -25,10 +25,16 @@ class Blog {
 
   factory Blog.fromMap(Map<String, dynamic> map) {
     int parsedCommentCount = 0;
-    if (map['comments'] is Map) {
-      parsedCommentCount = map['comments']['count'] ?? 0;
-    } else if (map['comments'] is List) {
-      parsedCommentCount = (map['comments'] as List).length;
+
+    if (map['comments'] is List) {
+      final list = map['comments'] as List;
+      if (list.isNotEmpty) {
+        if (list.first is Map && list.first.containsKey('count')) {
+          parsedCommentCount = list.first['count'] ?? 0;
+        } else {
+          parsedCommentCount = list.length;
+        }
+      }
     }
 
     return Blog(

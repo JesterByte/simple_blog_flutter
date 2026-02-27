@@ -8,6 +8,7 @@ import 'package:simple_blog_flutter/features/blog/blog_provider.dart';
 import 'package:simple_blog_flutter/features/blog/domain/blog.dart';
 import 'package:simple_blog_flutter/features/blog/presentation/create_blog_screen.dart';
 import 'package:simple_blog_flutter/features/comment/comment_provider.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class BlogDetailScreen extends ConsumerStatefulWidget {
   final Blog blog;
@@ -22,6 +23,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
   final _commentController = TextEditingController();
   List<File> _selectedImages = [];
   bool _posting = false;
+  int _currentImageIndex = 0;
 
   Future<void> _pickImages() async {
     final picked = await ImagePicker().pickMultiImage();
@@ -67,7 +69,40 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.blog.title),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundImage: widget.blog.authorAvatar != null
+                  ? NetworkImage(widget.blog.authorAvatar!)
+                  : null,
+              child: widget.blog.authorAvatar == null
+                  ? const Icon(Icons.person)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.blog.authorName ?? 'User',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    timeago.format(widget.blog.createdAt),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           if (isAuthor)
             IconButton(
@@ -81,42 +116,43 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
               },
               icon: const Icon(Icons.edit),
             ),
-          IconButton(
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Delete Blog'),
-                  content: const Text(
-                    'Are you sure you want to delete this blog?',
+          if (isAuthor)
+            IconButton(
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Delete Blog'),
+                    content: const Text(
+                      'Are you sure you want to delete this blog?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Delete'),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Delete'),
-                    ),
-                  ],
-                ),
-              );
+                );
 
-              if (confirm == true) {
-                await ref
-                    .read(blogRepositoryProvider)
-                    .deleteBlog(widget.blog.id);
+                if (confirm == true) {
+                  await ref
+                      .read(blogRepositoryProvider)
+                      .deleteBlog(widget.blog.id);
 
-                ref.invalidate(blogListProvider);
+                  ref.invalidate(blogListProvider);
 
-                if (!context.mounted) return;
+                  if (!context.mounted) return;
 
-                Navigator.pop(context);
-              }
-            },
-            icon: const Icon(Icons.delete),
-          ),
+                  Navigator.pop(context);
+                }
+              },
+              icon: const Icon(Icons.delete),
+            ),
         ],
       ),
       body: _buildScrollableContent(ref),
@@ -133,13 +169,60 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              widget.blog.title,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            if (widget.blog.images.isNotEmpty) const SizedBox(height: 16),
             if (widget.blog.images.isNotEmpty)
               SizedBox(
-                height: 200,
-                child: PageView(
-                  children: widget.blog.images
-                      .map((url) => Image.network(url, fit: BoxFit.cover))
-                      .toList(),
+                height: 250,
+                child: Stack(
+                  children: [
+                    PageView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: widget.blog.images.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentImageIndex = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            widget.blog.images[index],
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
+                        );
+                      },
+                    ),
+                    if (widget.blog.images.isNotEmpty &&
+                        widget.blog.images.length > 1)
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${_currentImageIndex + 1} / ${widget.blog.images.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             const SizedBox(height: 16),
