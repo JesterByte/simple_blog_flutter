@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_blog_flutter/features/blog/blog_provider.dart';
 import 'package:simple_blog_flutter/features/blog/presentation/blog_detail_screen.dart';
 import 'package:simple_blog_flutter/features/blog/presentation/create_blog_screen.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class BlogListScreen extends ConsumerWidget {
   const BlogListScreen({super.key});
@@ -26,13 +27,24 @@ class BlogListScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final blog = blogs[index];
 
-              return ListTile(
-                title: Text(blog.title),
-                subtitle: Text(
-                  blog.content,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              // return ListTile(
+              //   title: Text(blog.title),
+              //   subtitle: Text(
+              //     blog.content,
+              //     maxLines: 2,
+              //     overflow: TextOverflow.ellipsis,
+              //   ),
+              //   onTap: () {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (_) => BlogDetailScreen(blog: blog),
+              //       ),
+              //     );
+              //   },
+              // );
+
+              return InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
@@ -41,6 +53,112 @@ class BlogListScreen extends ConsumerWidget {
                     ),
                   );
                 },
+                child: Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundImage: blog.authorAvatar != null
+                                  ? NetworkImage(blog.authorAvatar!)
+                                  : null,
+                              child: blog.authorAvatar == null
+                                  ? const Icon(Icons.person)
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    blog.authorName ?? 'User',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    timeago.format(blog.createdAt),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (blog.commentCount > 0)
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.comment,
+                                    size: 16,
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    blog.commentCount.toString(),
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          blog.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          blog.content,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (blog.images.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 80,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: blog.images.length,
+                              itemBuilder: (context, index) {
+                                final imageUrl = blog.images is Map
+                                    ? (blog.images as Map).values.elementAt(
+                                        index,
+                                      )
+                                    : blog.images[index];
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      imageUrl,
+                                      width: 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
               );
             },
           );
