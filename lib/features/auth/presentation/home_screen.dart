@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_blog_flutter/features/auth/auth_provider.dart';
+import 'package:simple_blog_flutter/features/auth/presentation/login_screen.dart';
 import 'package:simple_blog_flutter/features/blog/presentation/blog_list_screen.dart';
 import 'package:simple_blog_flutter/features/profile/presentation/profile_screen.dart';
 import 'package:simple_blog_flutter/features/profile/profile_provider.dart';
@@ -75,6 +76,13 @@ class HomeScreen extends ConsumerWidget {
       try {
         final repo = ref.read(authRepositoryProvider);
         await repo.signOut();
+
+        if (!context.mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => LoginScreen()),
+        );
       } catch (e) {
         if (!context.mounted) return;
 
