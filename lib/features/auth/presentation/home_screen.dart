@@ -87,7 +87,13 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(profileProvider);
+    final user = ref.watch(authStateProvider).value;
+
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final profileAsync = ref.watch(profileProvider(user.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -95,6 +101,7 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           profileAsync.when(
             data: (profile) {
+              final avatar = profile?.avatarUrl;
               if (profile?.avatarUrl != null) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
@@ -102,15 +109,15 @@ class HomeScreen extends ConsumerWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const ProfileScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => ProfileScreen()),
                       );
                     },
                     child: CircleAvatar(
                       radius: 18,
                       backgroundColor: Theme.of(context).primaryColor,
-                      backgroundImage: NetworkImage(profile!.avatarUrl!),
+                      backgroundImage: avatar != null
+                          ? NetworkImage(avatar)
+                          : null,
                     ),
                   ),
                 );

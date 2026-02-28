@@ -9,7 +9,9 @@ import 'package:simple_blog_flutter/features/profile/profile_provider.dart';
 import 'package:intl/intl.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key});
+  final String? userId;
+
+  const ProfileScreen({super.key, this.userId});
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
@@ -86,14 +88,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profileAsync = ref.watch(profileProvider);
+    final currentUser = ref.watch(authStateProvider).value;
+    final displayUserId = widget.userId ?? currentUser?.id;
+
+    if (displayUserId == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final profileAsync = ref.watch(profileProvider(displayUserId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: profileAsync.when(
         data: (profile) {
-          _displayNameController.text = profile?.displayName ?? '';
-          String joinedDate = DateFormat.yMMMd().format(profile!.createdAt);
+          if (profile == null) {
+            return const Center(child: Text('This user has no profile'));
+          }
+
+          _displayNameController.text = profile.displayName ?? '';
+          String joinedDate = DateFormat.yMMMd().format(profile.createdAt);
 
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -103,7 +116,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   alignment: Alignment.center,
                   children: [
                     _buildAvatar(profile.avatarUrl),
-                    if (!_removeAvatar &&
+                    if (displayUserId == currentUser?.id &&
+                        !_removeAvatar &&
                         (profile.avatarUrl != null || _selectedImage != null))
                       Positioned(
                         bottom: 0,
@@ -131,14 +145,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                   ],
                 ),
-                TextButton(
-                  onPressed: _pickImage,
-                  child: const Text('Change Avatar'),
-                ),
-                TextField(
-                  controller: _displayNameController,
-                  decoration: const InputDecoration(labelText: 'Display Name'),
-                ),
+                displayUserId == currentUser?.id
+                    ? TextButton(
+                        onPressed: _pickImage,
+                        child: const Text('Change Avatar'),
+                      )
+                    : const SizedBox(height: 10),
+                displayUserId == currentUser?.id
+                    ? TextField(
+                        controller: _displayNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Display Name',
+                        ),
+                      )
+                    : Text(
+                        profile.displayName ?? 'User',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -157,17 +180,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    _loading
-                        ? null
-                        : _saveProfile(profileAsync.value?.avatarUrl);
-                  },
-                  child: _loading
-                      ? const CircularProgressIndicator()
-                      : const Text('Save'),
-                ),
+                if (displayUserId == currentUser?.id) ...[
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () async {
+                      _loading
+                          ? null
+                          : _saveProfile(profileAsync.value?.avatarUrl);
+                    },
+                    child: _loading
+                        ? const CircularProgressIndicator()
+                        : const Text('Save'),
+                  ),
+                ],
               ],
             ),
           );

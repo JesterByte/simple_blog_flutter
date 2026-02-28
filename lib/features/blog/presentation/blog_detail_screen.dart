@@ -9,6 +9,7 @@ import 'package:simple_blog_flutter/features/blog/presentation/create_blog_scree
 import 'package:simple_blog_flutter/features/comment/comment_provider.dart';
 import 'package:simple_blog_flutter/features/comment/domain/comment.dart';
 import 'package:simple_blog_flutter/core/common_widgets/comment_image_carousel.dart';
+import 'package:simple_blog_flutter/features/profile/presentation/profile_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class BlogDetailScreen extends ConsumerStatefulWidget {
@@ -418,14 +419,24 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
           appBar: AppBar(
             title: Row(
               children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundImage: blog.authorAvatar != null
-                      ? NetworkImage(blog.authorAvatar!)
-                      : null,
-                  child: blog.authorAvatar == null
-                      ? const Icon(Icons.person)
-                      : null,
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProfileScreen(userId: blog.authorId),
+                      ),
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundImage: blog.authorAvatar != null
+                        ? NetworkImage(blog.authorAvatar!)
+                        : null,
+                    child: blog.authorAvatar == null
+                        ? const Icon(Icons.person)
+                        : null,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -576,14 +587,27 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
                           children: [
                             Row(
                               children: [
-                                CircleAvatar(
-                                  radius: 18,
-                                  backgroundImage: comment.authorAvatar != null
-                                      ? NetworkImage(comment.authorAvatar!)
-                                      : null,
-                                  child: comment.authorAvatar == null
-                                      ? const Icon(Icons.person)
-                                      : null,
+                                InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ProfileScreen(
+                                          userId: comment.authorId,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: CircleAvatar(
+                                    radius: 18,
+                                    backgroundImage:
+                                        comment.authorAvatar != null
+                                        ? NetworkImage(comment.authorAvatar!)
+                                        : null,
+                                    child: comment.authorAvatar == null
+                                        ? const Icon(Icons.person)
+                                        : null,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(

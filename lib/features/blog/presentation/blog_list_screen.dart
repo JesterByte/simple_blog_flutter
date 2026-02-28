@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_blog_flutter/features/blog/blog_provider.dart';
 import 'package:simple_blog_flutter/features/blog/presentation/blog_detail_screen.dart';
 import 'package:simple_blog_flutter/features/blog/presentation/create_blog_screen.dart';
+import 'package:simple_blog_flutter/features/profile/presentation/profile_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class BlogListScreen extends ConsumerWidget {
@@ -48,14 +49,25 @@ class BlogListScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundImage: blog.authorAvatar != null
-                                  ? NetworkImage(blog.authorAvatar!)
-                                  : null,
-                              child: blog.authorAvatar == null
-                                  ? const Icon(Icons.person)
-                                  : null,
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ProfileScreen(userId: blog.authorId),
+                                  ),
+                                );
+                              },
+                              child: CircleAvatar(
+                                radius: 18,
+                                backgroundImage: blog.authorAvatar != null
+                                    ? NetworkImage(blog.authorAvatar!)
+                                    : null,
+                                child: blog.authorAvatar == null
+                                    ? const Icon(Icons.person)
+                                    : null,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(

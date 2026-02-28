@@ -8,10 +8,10 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(client);
 });
 
-final profileProvider = FutureProvider<Profile?>((ref) async {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return null;
-
+final profileProvider = FutureProvider.family<Profile?, String>((
+  ref,
+  userId,
+) async {
   final repo = ref.watch(profileRepositoryProvider);
-  return repo.getProfile(user.id);
+  return repo.getProfile(userId);
 });
