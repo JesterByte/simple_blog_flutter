@@ -27,23 +27,6 @@ class BlogListScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final blog = blogs[index];
 
-              // return ListTile(
-              //   title: Text(blog.title),
-              //   subtitle: Text(
-              //     blog.content,
-              //     maxLines: 2,
-              //     overflow: TextOverflow.ellipsis,
-              //   ),
-              //   onTap: () {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(
-              //         builder: (_) => BlogDetailScreen(blog: blog),
-              //       ),
-              //     );
-              //   },
-              // );
-
               return InkWell(
                 onTap: () {
                   Navigator.push(
@@ -95,26 +78,27 @@ class BlogListScreen extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            if (blog.commentCount > 0)
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.comment,
-                                    size: 16,
-                                    color: Colors.grey,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    blog.commentCount.toString(),
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.comment,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  blog.commentCount.toString(),
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
                           blog.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

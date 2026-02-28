@@ -72,11 +72,6 @@ class BlogRepository {
   }
 
   Future<List<Blog>> getBlogs() async {
-    // final response = await _client
-    //     .from('blogs')
-    //     .select('*, blog_images(image_url)')
-    //     .order('created_at', ascending: false);
-
     final response = await _client
         .from('blogs')
         .select('''

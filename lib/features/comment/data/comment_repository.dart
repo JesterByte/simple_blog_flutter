@@ -40,12 +40,74 @@ class CommentRepository {
     }
   }
 
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    List<String>? existingImages,
+    List<File>? newImages,
+  }) async {
+    await _client
+        .from('comments')
+        .update({
+          'content': content,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', commentId);
+
+    final currentImages =
+        await _client
+                .from('comment_images')
+                .select('id, image_url')
+                .eq('comment_id', commentId)
+            as List<dynamic>;
+
+    if (existingImages != null) {
+      final List<dynamic> toDelete = currentImages
+          .where((img) => !existingImages.contains(img['image_url']))
+          .map((img) => img['id'])
+          .toList();
+
+      if (toDelete.isNotEmpty) {
+        await _client.from('comment_images').delete().inFilter('id', toDelete);
+      }
+    }
+
+    // if (newImages == null || newImages.isEmpty) return;
+
+    // await _client.from('comment_images').delete().eq('id', commentId);
+
+    if (newImages != null && newImages.isNotEmpty) {
+      for (final file in newImages) {
+        final path = 'comments/$commentId/${_uuid.v4()}.jpg';
+
+        await _client.storage.from('comment-images').upload(path, file);
+
+        final publicUrl = _client.storage
+            .from('comment-images')
+            .getPublicUrl(path);
+
+        await _client.from('comment_images').insert({
+          'comment_id': commentId,
+          'image_url': publicUrl,
+        });
+      }
+    }
+  }
+
+  Future<void> deleteComment(String commentId) async {
+    await _client.from('comments').delete().eq('id', commentId);
+  }
+
   Future<List<Comment>> getComments(String blogId) async {
     final response = await _client
         .from('comments')
-        .select('*, comment_images (image_url)')
+        .select(''' 
+          *, 
+          profiles!comments_author_id_fkey(avatar_url, display_name),
+          comment_images(image_url)
+        ''')
         .eq('blog_id', blogId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: true);
 
     return (response as List).map((map) => Comment.fromMap(map)).toList();
   }

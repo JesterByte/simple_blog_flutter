@@ -6,6 +6,8 @@ class Comment {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final List<String> images;
+  final String? authorAvatar;
+  final String? authorName;
 
   Comment({
     required this.id,
@@ -15,6 +17,8 @@ class Comment {
     required this.createdAt,
     this.updatedAt,
     this.images = const [],
+    this.authorAvatar,
+    this.authorName,
   });
 
   factory Comment.fromMap(Map<String, dynamic> map) {
@@ -29,6 +33,8 @@ class Comment {
               ?.map((e) => e['image_url'] as String)
               .toList() ??
           [],
+      authorAvatar: map['profiles']?['avatar_url'],
+      authorName: map['profiles']?['display_name'],
     );
   }
 }
