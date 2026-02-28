@@ -42,7 +42,8 @@ class BlogRepository {
     required String blogId,
     required String title,
     required String content,
-    required List<File> newImages,
+    List<String>? existingImages,
+    List<File>? newImages,
   }) async {
     await _client
         .from('blogs')
@@ -53,22 +54,55 @@ class BlogRepository {
         })
         .eq('id', blogId);
 
-    if (newImages.isEmpty) return;
+    final currentImages =
+        await _client
+                .from('blog_images')
+                .select('id, image_url')
+                .eq('blog_id', blogId)
+            as List<dynamic>;
 
-    await _client.from('blog_images').delete().eq('blog_id', blogId);
+    if (existingImages != null) {
+      final List<dynamic> toDelete = currentImages
+          .where((img) => !existingImages.contains(img['image_url']))
+          .map((img) => img['id'])
+          .toList();
 
-    for (final file in newImages) {
-      final path = 'blogs/$blogId/${_uuid.v4()}.jpg';
-
-      await _client.storage.from('blog-images').upload(path, file);
-
-      final publicUrl = _client.storage.from('blog-images').getPublicUrl(path);
-
-      await _client.from('blog_images').insert({
-        'blog_id': blogId,
-        'image_url': publicUrl,
-      });
+      if (toDelete.isNotEmpty) {
+        await _client.from('blog_images').delete().inFilter('id', toDelete);
+      }
     }
+
+    if (newImages != null && newImages.isNotEmpty) {
+      for (final file in newImages) {
+        final path = 'blogs/$blogId/${_uuid.v4()}.jpg';
+
+        await _client.storage.from('blog-images').upload(path, file);
+
+        final publicUrl = _client.storage
+            .from('blog-images')
+            .getPublicUrl(path);
+
+        await _client.from('blog_images').insert({
+          'blog_id': blogId,
+          'image_url': publicUrl,
+        });
+      }
+    }
+  }
+
+  Future<Blog> getBlog({required String blogId}) async {
+    final response = await _client
+        .from('blogs')
+        .select(''' 
+          *,
+          blog_images(image_url),
+          profiles!blogs_author_id_fkey(avatar_url, display_name),
+          comments(count)
+        ''')
+        .eq('id', blogId)
+        .single();
+
+    return Blog.fromMap(response);
   }
 
   Future<List<Blog>> getBlogs() async {

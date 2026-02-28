@@ -12,3 +12,8 @@ final blogListProvider = FutureProvider<List<Blog>>((ref) async {
   final repo = ref.watch(blogRepositoryProvider);
   return repo.getBlogs();
 });
+
+final blogProvider = FutureProvider.family<Blog, String>((ref, id) async {
+  final repo = ref.watch(blogRepositoryProvider);
+  return repo.getBlog(blogId: id);
+});

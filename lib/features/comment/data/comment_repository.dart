@@ -57,7 +57,7 @@ class CommentRepository {
     final currentImages =
         await _client
                 .from('comment_images')
-                .select('id, image_url')
+                .select('id, image_url') 
                 .eq('comment_id', commentId)
             as List<dynamic>;
 
@@ -71,10 +71,6 @@ class CommentRepository {
         await _client.from('comment_images').delete().inFilter('id', toDelete);
       }
     }
-
-    // if (newImages == null || newImages.isEmpty) return;
-
-    // await _client.from('comment_images').delete().eq('id', commentId);
 
     if (newImages != null && newImages.isNotEmpty) {
       for (final file in newImages) {

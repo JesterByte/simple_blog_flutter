@@ -12,9 +12,9 @@ import 'package:simple_blog_flutter/core/common_widgets/comment_image_carousel.d
 import 'package:timeago/timeago.dart' as timeago;
 
 class BlogDetailScreen extends ConsumerStatefulWidget {
-  final Blog blog;
+  final String blogId;
 
-  const BlogDetailScreen({super.key, required this.blog});
+  const BlogDetailScreen({super.key, required this.blogId});
 
   @override
   ConsumerState<BlogDetailScreen> createState() => _BlogDetailScreenState();
@@ -22,24 +22,18 @@ class BlogDetailScreen extends ConsumerStatefulWidget {
 
 class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
   final _commentController = TextEditingController();
-  List<File> _selectedImages = [];
+  final List<File> _selectedImages = [];
   bool _posting = false;
   int _currentImageIndex = 0;
   bool _updating = false;
 
-  Future<List<File>?> _pickImages({bool editMode = false}) async {
+  Future<List<File>?> _pickImages() async {
     final picked = await ImagePicker().pickMultiImage();
 
     if (picked.isNotEmpty) {
       final List<File> files = picked.map((e) => File(e.path)).toList();
 
-      if (editMode) {
-        return files;
-      } else {
-        setState(() {
-          _selectedImages = files;
-        });
-      }
+      return files;
     }
 
     return null;
@@ -58,7 +52,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
     await ref
         .read(commentRepositoryProvider)
         .createComment(
-          blogId: widget.blog.id,
+          blogId: widget.blogId,
           authorId: user.id,
           content: _commentController.text.trim(),
           images: _selectedImages,
@@ -67,7 +61,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
     _commentController.clear();
     _selectedImages.clear();
 
-    ref.invalidate(commentsProvider(widget.blog.id));
+    ref.invalidate(commentsProvider(widget.blogId));
 
     setState(() => _posting = false);
   }
@@ -159,7 +153,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
                     children: [
                       IconButton(
                         onPressed: () async {
-                          final picked = await _pickImages(editMode: true);
+                          final picked = await _pickImages();
                           if (picked != null) {
                             setModalState(() {
                               newImages.addAll(picked);
@@ -246,7 +240,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
     );
 
     if (updated == true) {
-      ref.invalidate(commentsProvider(widget.blog.id));
+      ref.invalidate(commentsProvider(widget.blogId));
     }
   }
 
@@ -310,7 +304,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
       try {
         setState(() => _updating = true);
         await ref.read(commentRepositoryProvider).deleteComment(commentId);
-        ref.invalidate(commentsProvider(widget.blog.id));
+        ref.invalidate(commentsProvider(widget.blogId));
 
         if (!mounted) return;
 
@@ -329,107 +323,170 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final user = ref.watch(authStateProvider).value;
-    final isAuthor = user?.id == widget.blog.authorId;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundImage: widget.blog.authorAvatar != null
-                  ? NetworkImage(widget.blog.authorAvatar!)
-                  : null,
-              child: widget.blog.authorAvatar == null
-                  ? const Icon(Icons.person)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  Future<void> _deleteBlog(String blogId) async {
+    final shouldDelete = await showModalBottomSheet<bool>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Delete Blog',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Row(
                 children: [
-                  Text(
-                    widget.blog.authorName ?? 'User',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
                     ),
                   ),
-                  Text(
-                    timeago.format(widget.blog.createdAt),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          if (isAuthor) ...[
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreateBlogScreen(blog: widget.blog),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.edit),
-            ),
-            IconButton(
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Delete Blog'),
-                    content: const Text(
-                      'Are you sure you want to delete this blog?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      try {
+        setState(() => _updating = true);
+        await ref.read(blogRepositoryProvider).deleteBlog(blogId);
+        ref.invalidate(blogListProvider);
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Blog deleted')));
+
+        Navigator.pop(context);
+      } catch (e) {
+        setState(() => _updating = false);
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final blogAsync = ref.watch(blogProvider(widget.blogId));
+    final commentsAsync = ref.watch(commentsProvider(widget.blogId));
+
+    return blogAsync.when(
+      data: (blog) {
+        final user = ref.watch(authStateProvider).value;
+        final isAuthor = user?.id == blog.authorId;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundImage: blog.authorAvatar != null
+                      ? NetworkImage(blog.authorAvatar!)
+                      : null,
+                  child: blog.authorAvatar == null
+                      ? const Icon(Icons.person)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        blog.authorName ?? 'User',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Delete'),
+                      Text(
+                        timeago.format(blog.createdAt),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),
-                );
-
-                if (confirm == true) {
-                  await ref
-                      .read(blogRepositoryProvider)
-                      .deleteBlog(widget.blog.id);
-
-                  ref.invalidate(blogListProvider);
-
-                  if (!context.mounted) return;
-
-                  Navigator.pop(context);
-                }
-              },
-              icon: const Icon(Icons.delete),
+                ),
+              ],
             ),
-          ],
-        ],
-      ),
-      body: _buildScrollableContent(ref),
-      bottomNavigationBar: _buildCommentInput(ref),
+            actions: [
+              if (isAuthor) ...[
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreateBlogScreen(blog: blog),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    _deleteBlog(blog.id);
+                  },
+                  icon: const Icon(Icons.delete),
+                ),
+              ],
+            ],
+          ),
+          body: _buildScrollableContent(ref, blog, commentsAsync),
+          bottomNavigationBar: _buildCommentInput(ref),
+        );
+      },
+      error: (e, _) => Scaffold(body: Center(child: Text(e.toString()))),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
     );
   }
 
-  Widget _buildScrollableContent(WidgetRef ref) {
-    final commentsAsync = ref.watch(commentsProvider(widget.blog.id));
-
+  Widget _buildScrollableContent(
+    WidgetRef ref,
+    Blog blog,
+    AsyncValue<List<Comment>> commentsAsync,
+  ) {
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -437,10 +494,10 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.blog.title,
+              blog.title,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            if (widget.blog.images.isNotEmpty) ...[
+            if (blog.images.isNotEmpty) ...[
               const SizedBox(height: 16),
               SizedBox(
                 height: 250,
@@ -448,7 +505,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
                   children: [
                     PageView.builder(
                       physics: const BouncingScrollPhysics(),
-                      itemCount: widget.blog.images.length,
+                      itemCount: blog.images.length,
                       onPageChanged: (index) {
                         setState(() {
                           _currentImageIndex = index;
@@ -458,15 +515,14 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Image.network(
-                            widget.blog.images[index],
+                            blog.images[index],
                             fit: BoxFit.cover,
                             width: double.infinity,
                           ),
                         );
                       },
                     ),
-                    if (widget.blog.images.isNotEmpty &&
-                        widget.blog.images.length > 1)
+                    if (blog.images.isNotEmpty && blog.images.length > 1)
                       Positioned(
                         bottom: 12,
                         right: 12,
@@ -480,7 +536,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '${_currentImageIndex + 1} / ${widget.blog.images.length}',
+                            '${_currentImageIndex + 1} / ${blog.images.length}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -494,7 +550,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            Text(widget.blog.content, style: const TextStyle(fontSize: 16)),
+            Text(blog.content, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 24),
             const Text(
               'Comments',
@@ -623,7 +679,12 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
             Row(
               children: [
                 IconButton(
-                  onPressed: _pickImages,
+                  onPressed: () async {
+                    final picked = await _pickImages();
+                    if (picked != null) {
+                      setState(() => _selectedImages.addAll(picked));
+                    }
+                  },
                   icon: const Icon(Icons.image),
                 ),
                 Expanded(

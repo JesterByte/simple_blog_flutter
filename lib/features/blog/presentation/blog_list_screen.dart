@@ -32,7 +32,7 @@ class BlogListScreen extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => BlogDetailScreen(blog: blog),
+                      builder: (_) => BlogDetailScreen(blogId: blog.id),
                     ),
                   );
                 },
