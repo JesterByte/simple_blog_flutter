@@ -107,7 +107,7 @@ class _CreateBlogScreenState extends ConsumerState<CreateBlogScreen> {
               maxLines: 4,
             ),
             const SizedBox(height: 10),
-            if (_existingImages.isNotEmpty || _newImages.isNotEmpty)
+            if (isEdit && (_existingImages.isNotEmpty || _newImages.isNotEmpty))
               SizedBox(
                 height: 120,
                 child: ListView(
@@ -136,6 +136,28 @@ class _CreateBlogScreenState extends ConsumerState<CreateBlogScreen> {
                         ),
                         onDelete: () => setState(() {
                           _newImages.removeAt(entry.key);
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (!isEdit && _selectedImages.isNotEmpty)
+              SizedBox(
+                height: 120,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    ..._selectedImages.asMap().entries.map(
+                      (entry) => _buildImageItem(
+                        child: Image.file(
+                          entry.value,
+                          width: 110,
+                          height: 110,
+                          fit: BoxFit.cover,
+                        ),
+                        onDelete: () => setState(() {
+                          _selectedImages.removeAt(entry.key);
                         }),
                       ),
                     ),
