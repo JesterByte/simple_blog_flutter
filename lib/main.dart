@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simple_blog_flutter/core/scroll/desktop_scroll_behavior.dart';
 import 'package:simple_blog_flutter/features/auth/auth_provider.dart';
 import 'package:simple_blog_flutter/features/auth/presentation/home_screen.dart';
 import 'package:simple_blog_flutter/features/auth/presentation/login_screen.dart';
@@ -28,6 +29,7 @@ class MyApp extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
 
     return MaterialApp(
+      scrollBehavior: AppScrollBehavior(),
       title: 'Simple Blog',
       theme: ThemeData(
         // This is the theme of your application.

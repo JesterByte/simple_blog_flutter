@@ -41,14 +41,6 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
     }
 
     return images;
-
-    // if (picked.isNotEmpty) {
-    //   final List<File> files = picked.map((e) => File(e.path)).toList();
-
-    //   return files;
-    // }
-
-    // return null;
   }
 
   Future<void> _postComment() async {
@@ -714,20 +706,6 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
                     );
                   }).toList(),
                 ),
-                // child: ListView.builder(
-                //   scrollDirection: Axis.horizontal,
-                //   itemCount: _selectedImages.length,
-                //   itemBuilder: (context, index) {
-                //     return Padding(
-                //       padding: const EdgeInsets.all(4),
-                //       child: Image.memory(
-                //         _selectedImages[index],
-                //         width: 60,
-                //         fit: BoxFit.cover,
-                //       ),
-                //     );
-                //   },
-                // ),
               ),
             Row(
               children: [
