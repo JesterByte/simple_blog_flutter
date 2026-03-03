@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:simple_blog_flutter/features/blog/domain/blog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -14,7 +13,7 @@ class BlogRepository {
     required String authorId,
     required String title,
     required String content,
-    required List<File> images,
+    required List<Uint8List> images,
   }) async {
     final blogReponse = await _client
         .from('blogs')
@@ -24,10 +23,16 @@ class BlogRepository {
 
     final blogId = blogReponse['id'];
 
-    for (final file in images) {
+    for (final bytes in images) {
       final path = 'blogs/$blogId/${_uuid.v4()}.jpg';
 
-      await _client.storage.from('blog-images').upload(path, file);
+      await _client.storage
+          .from('blog-images')
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(upsert: false),
+          );
 
       final publicUrl = _client.storage.from('blog-images').getPublicUrl(path);
 
@@ -43,7 +48,7 @@ class BlogRepository {
     required String title,
     required String content,
     List<String>? existingImages,
-    List<File>? newImages,
+    List<Uint8List>? newImages,
   }) async {
     await _client
         .from('blogs')
@@ -73,10 +78,16 @@ class BlogRepository {
     }
 
     if (newImages != null && newImages.isNotEmpty) {
-      for (final file in newImages) {
+      for (final bytes in newImages) {
         final path = 'blogs/$blogId/${_uuid.v4()}.jpg';
 
-        await _client.storage.from('blog-images').upload(path, file);
+        await _client.storage
+            .from('blog-images')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(upsert: false),
+            );
 
         final publicUrl = _client.storage
             .from('blog-images')

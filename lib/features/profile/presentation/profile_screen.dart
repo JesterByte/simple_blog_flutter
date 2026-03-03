@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,17 +17,25 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final ImagePicker _picker = ImagePicker();
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
+
   final _displayNameController = TextEditingController();
-  File? _selectedImage;
   bool _removeAvatar = false;
   bool _loading = false;
+  bool _isInitialized = false;
 
   Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final XFile? picked = await _picker.pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
+
       setState(() {
-        _selectedImage = File(picked.path);
+        _selectedImage = picked;
+        _selectedImageBytes = bytes;
+        _removeAvatar = false;
       });
     }
   }
@@ -49,10 +56,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         avatarUrl = null;
       }
 
-      if (_selectedImage != null) {
+      if (_selectedImageBytes != null) {
         avatarUrl = await repo.uploadAvatar(
           user.id,
-          _selectedImage!,
+          _selectedImageBytes!,
           currentAvatarUrl,
         );
       }
@@ -63,7 +70,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         avatarUrl: avatarUrl,
       );
 
-      ref.invalidate(profileProvider);
+      ref.invalidate(profileProvider(user.id));
       ref.invalidate(blogListProvider);
 
       if (!mounted) return;
@@ -87,6 +94,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.userId != oldWidget.userId) {
+      _displayNameController.clear();
+      _selectedImage = null;
+      _removeAvatar = false;
+      _isInitialized = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(authStateProvider).value;
     final displayUserId = widget.userId ?? currentUser?.id;
@@ -105,7 +124,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             return const Center(child: Text('This user has no profile'));
           }
 
-          _displayNameController.text = profile.displayName ?? '';
+          if (!_isInitialized) {
+            _displayNameController.text = profile.displayName ?? '';
+            _isInitialized = true;
+          }
+
+          // _displayNameController.text = profile.displayName ?? '';
           String joinedDate = DateFormat.yMMMd().format(profile.createdAt);
 
           return Padding(
@@ -204,10 +228,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildAvatar(String? avatarUrl) {
-    if (_selectedImage != null) {
+    if (_selectedImageBytes != null) {
       return CircleAvatar(
         radius: 50,
-        backgroundImage: FileImage(_selectedImage!),
+        backgroundImage: MemoryImage(_selectedImageBytes!),
       );
     }
 

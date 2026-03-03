@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:simple_blog_flutter/features/profile/domain/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -43,15 +42,23 @@ class ProfileRepository {
 
   Future<String> uploadAvatar(
     String userId,
-    File file,
+    Uint8List bytes,
     String? oldAvatarUrl,
   ) async {
     final path =
         'avatars/$userId/avatar-${DateTime.now().microsecondsSinceEpoch}.jpg';
 
+    // await _client.storage
+    //     .from('avatars')
+    //     .upload(path, file, fileOptions: const FileOptions(upsert: true));
+
     await _client.storage
         .from('avatars')
-        .upload(path, file, fileOptions: const FileOptions(upsert: true));
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: true),
+        );
 
     final publicUrl = _client.storage.from('avatars').getPublicUrl(path);
 

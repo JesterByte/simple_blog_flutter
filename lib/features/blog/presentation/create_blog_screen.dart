@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,11 +19,12 @@ class _CreateBlogScreenState extends ConsumerState<CreateBlogScreen> {
   String _appBarTitle = 'Create Blog';
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  final List<File> _selectedImages = [];
   bool _loading = false;
   bool get isEdit => widget.blog != null;
+
+  final List<Uint8List> _selectedImages = [];
   List<String> _existingImages = [];
-  final List<File> _newImages = [];
+  final List<Uint8List> _newImages = [];
 
   @override
   void initState() {
@@ -37,15 +37,19 @@ class _CreateBlogScreenState extends ConsumerState<CreateBlogScreen> {
     }
   }
 
-  Future<List<File>?> _pickImages() async {
+  Future<List<Uint8List>?> _pickImages() async {
     final picked = await ImagePicker().pickMultiImage();
-    final List<File> files = picked.map((e) => File(e.path)).toList();
 
-    if (picked.isNotEmpty) {
-      return files;
+    if (picked.isEmpty) return null;
+
+    final List<Uint8List> images = [];
+
+    for (final image in picked) {
+      final bytes = await image.readAsBytes();
+      images.add(bytes);
     }
 
-    return null;
+    return images;
   }
 
   Future<void> _saveBlog() async {
@@ -128,7 +132,7 @@ class _CreateBlogScreenState extends ConsumerState<CreateBlogScreen> {
                     ),
                     ..._newImages.asMap().entries.map(
                       (entry) => _buildImageItem(
-                        child: Image.file(
+                        child: Image.memory(
                           entry.value,
                           width: 110,
                           height: 110,
@@ -150,7 +154,7 @@ class _CreateBlogScreenState extends ConsumerState<CreateBlogScreen> {
                   children: [
                     ..._selectedImages.asMap().entries.map(
                       (entry) => _buildImageItem(
-                        child: Image.file(
+                        child: Image.memory(
                           entry.value,
                           width: 110,
                           height: 110,

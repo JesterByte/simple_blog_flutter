@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,21 +23,32 @@ class BlogDetailScreen extends ConsumerStatefulWidget {
 
 class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
   final _commentController = TextEditingController();
-  final List<File> _selectedImages = [];
   bool _posting = false;
   int _currentImageIndex = 0;
   bool _updating = false;
+  final List<Uint8List> _selectedImages = [];
 
-  Future<List<File>?> _pickImages() async {
+  Future<List<Uint8List>?> _pickImages() async {
     final picked = await ImagePicker().pickMultiImage();
 
-    if (picked.isNotEmpty) {
-      final List<File> files = picked.map((e) => File(e.path)).toList();
+    if (picked.isEmpty) return null;
 
-      return files;
+    final List<Uint8List> images = [];
+
+    for (final image in picked) {
+      final bytes = await image.readAsBytes();
+      images.add(bytes);
     }
 
-    return null;
+    return images;
+
+    // if (picked.isNotEmpty) {
+    //   final List<File> files = picked.map((e) => File(e.path)).toList();
+
+    //   return files;
+    // }
+
+    // return null;
   }
 
   Future<void> _postComment() async {
@@ -69,7 +80,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
 
   Future<void> _editComment(Comment comment) async {
     final controller = TextEditingController(text: comment.content);
-    List<File> newImages = [];
+    List<Uint8List> newImages = [];
     List<String> existingImages = List.from(comment.images);
 
     final updated = await showModalBottomSheet<bool>(
@@ -135,7 +146,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
                           ),
                           ...newImages.asMap().entries.map(
                             (entry) => _buildImageItem(
-                              child: Image.file(
+                              child: Image.memory(
                                 entry.value,
                                 width: 100,
                                 height: 100,
@@ -684,21 +695,39 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
           children: [
             if (_selectedImages.isNotEmpty)
               SizedBox(
-                height: 80,
-                child: ListView.builder(
+                height: 100,
+                child: ListView(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _selectedImages.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Image.file(
-                        _selectedImages[index],
-                        width: 60,
+                  children: _selectedImages.asMap().entries.map((entry) {
+                    return _buildImageItem(
+                      child: Image.memory(
+                        entry.value,
+                        width: 80,
+                        height: 80,
                         fit: BoxFit.cover,
                       ),
+                      onDelete: () {
+                        setState(() {
+                          _selectedImages.removeAt(entry.key);
+                        });
+                      },
                     );
-                  },
+                  }).toList(),
                 ),
+                // child: ListView.builder(
+                //   scrollDirection: Axis.horizontal,
+                //   itemCount: _selectedImages.length,
+                //   itemBuilder: (context, index) {
+                //     return Padding(
+                //       padding: const EdgeInsets.all(4),
+                //       child: Image.memory(
+                //         _selectedImages[index],
+                //         width: 60,
+                //         fit: BoxFit.cover,
+                //       ),
+                //     );
+                //   },
+                // ),
               ),
             Row(
               children: [

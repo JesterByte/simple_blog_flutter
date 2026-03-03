@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:simple_blog_flutter/features/comment/domain/comment.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -14,7 +13,7 @@ class CommentRepository {
     required String blogId,
     required String authorId,
     required String content,
-    required List<File> images,
+    required List<Uint8List> images,
   }) async {
     final commentResponse = await _client
         .from('comments')
@@ -24,10 +23,16 @@ class CommentRepository {
 
     final commentId = commentResponse['id'];
 
-    for (final file in images) {
+    for (final bytes in images) {
       final path = 'comments/$commentId/${_uuid.v4()}.jpg';
 
-      await _client.storage.from('comment-images').upload(path, file);
+      await _client.storage
+          .from('comment-images')
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(upsert: false),
+          );
 
       final publicUrl = _client.storage
           .from('comment-images')
@@ -44,7 +49,7 @@ class CommentRepository {
     required String commentId,
     required String content,
     List<String>? existingImages,
-    List<File>? newImages,
+    List<Uint8List>? newImages,
   }) async {
     await _client
         .from('comments')
@@ -57,7 +62,7 @@ class CommentRepository {
     final currentImages =
         await _client
                 .from('comment_images')
-                .select('id, image_url') 
+                .select('id, image_url')
                 .eq('comment_id', commentId)
             as List<dynamic>;
 
@@ -73,10 +78,10 @@ class CommentRepository {
     }
 
     if (newImages != null && newImages.isNotEmpty) {
-      for (final file in newImages) {
+      for (final bytes in newImages) {
         final path = 'comments/$commentId/${_uuid.v4()}.jpg';
 
-        await _client.storage.from('comment-images').upload(path, file);
+        await _client.storage.from('comment-images').uploadBinary(path, bytes);
 
         final publicUrl = _client.storage
             .from('comment-images')
