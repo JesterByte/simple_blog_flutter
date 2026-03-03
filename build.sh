@@ -7,7 +7,7 @@ export PATH="$PATH:`pwd`/flutter/bin"
 cp .env.example .env
 
 echo "SUPABASE_URL=$SUPABASE_URL" > .env
-echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" > .env
+echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
 
 # 2. Run Flutter build
 flutter config --enable-web
